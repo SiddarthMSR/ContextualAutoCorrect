@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Autocorrect Demo</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <!-- Load diff-match-patch library from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+</head>
+<body>
+  <h1>Live Autocorrect Demo</h1>
+  
+  <!-- Instructions panel -->
+  <div class="instructions">
+    <p>
+      Type your text below. When you finish a sentence (press <strong>. </strong>or <strong>?</strong>), live suggestions appear.
+      Use <strong>Ctrl + [</strong> and <strong>Ctrl + ]</strong> to cycle through the suggestions and press <strong>Enter</strong> to accept one.
+    </p>
+  </div>
+  
+  <!-- Textarea for input -->
+  <textarea id="sentenceInput" rows="6" cols="60" placeholder="Type your text here"></textarea>
+  
+  <!-- Container for rendering diff suggestions -->
+  <div id="renderedText" class="suggestion-box"></div>
+  
+  <script src="/static/js/scripts.js"></script>
+</body>
+</html>
