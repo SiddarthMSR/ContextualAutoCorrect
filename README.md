@@ -1,19 +1,20 @@
 # Contextual AutoCorrect
 
 ## Overview
-Contextual AutoCorrect is a machine learning model based on **T5**, fine-tuned to perform intelligent spelling and grammar correction while preserving context. This repository contains the FastAPI-based backend and a simple frontend interface for live text correction.
+Contextual AutoCorrect is our machine learning model repository based on **T5**, fine-tuned to perform intelligent spelling and grammar correction while preserving context. This repository contains the FastAPI-based backend and a simple frontend interface for live text correction.
 
 ## Frontend Preview
 Here’s a screenshot of the frontend (click the image to watch the demo video):
 
 [![Watch the demo](assets/screenshot.png)](assets/Autocorrect_Demo.mp4)
 
-
-## Features
+## Contents
 - **Context-aware corrections** for spelling and grammar.
 - **FastAPI backend** for serving predictions.
 - **Simple HTML/CSS/JS frontend** for real-time interaction.
 - **Pretrained model checkpoints** available for download.
+- **Jupyter notebook for fine-tuning experiments**.
+- **Project reports detailing methodology and results**.
 
 ## Setup
 
@@ -35,7 +36,7 @@ Due to GitHub's file size restrictions, the fine-tuned model is not stored in th
 
 [Download Model Checkpoints](https://drive.google.com/drive/folders/1wbRO1hPARBPcnkJ456GUGRCJFjE7na88?usp=drive_link)  
 
-Download phase_3_hard_checkpoint.zip and unzip it. Place the model folder inside the project directory as follows:
+Download `phase_3_hard_checkpoint.zip` and unzip it. Place the model folder inside the project directory as follows:
 ```
 ContextualAutoCorrect/
 │── Finetuned Models/
@@ -70,6 +71,11 @@ ContextualAutoCorrect/
 │   ├── Autocorrect_Demo.mp4
 │   ├── screenshot.png
 │── Finetuned Models/       # Model checkpoint folder (to be added manually)
+│── ML/                     # Jupyter notebook for model fine-tuning
+│   ├── autocorrectfinetunet5.ipynb
+|   │── Reports/                # Project reports
+│   │   ├── AutoCorrect_Report_2.pdf
+│   │   ├── AutoCorrectComplete_Mid_Term_Report.pdf
 │── environment.yml         # Conda environment dependencies
 │── README.md               # Project documentation
 ```
