@@ -1,17 +1,23 @@
-
 let globalOrigWords = [];
 let globalCorrWords = [];
-
-
 let activeSuggestionIndex = -1;
-
-console.log("HI");
 
 document.addEventListener("DOMContentLoaded", function () {
   const sentenceInput = document.getElementById("sentenceInput");
+  const wordCountElement = document.getElementById("wordCount");
+  const charCountElement = document.getElementById("charCount");
+  const totalWordCountElement = document.getElementById("totalWordCount");
+  const sentenceCountElement = document.getElementById("sentenceCount");
+
+  // Initialize the word and character count
+  updateWordAndCharCount(sentenceInput.value);
 
   sentenceInput.addEventListener("input", function () {
     const text = sentenceInput.value;
+    
+    // Update word and character count
+    updateWordAndCharCount(text);
+    
     const trimmed = text.trim();
     if (trimmed.slice(-1) === '.' || trimmed.slice(-1) === '?') {
       getLiveSuggestion(text);
@@ -20,6 +26,33 @@ document.addEventListener("DOMContentLoaded", function () {
       activeSuggestionIndex = -1;
     }
   });
+
+  // Function to update word and character count
+  function updateWordAndCharCount(text) {
+    // Count words
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    wordCountElement.textContent = words;
+    totalWordCountElement.textContent = words;
+
+    // Count characters
+    const chars = text.length;
+    charCountElement.textContent = chars;
+
+    // Count sentences
+    const sentences = text.trim() ? (text.match(/[^.?!]+[.?!]+/g) || []).length : 0;
+    sentenceCountElement.textContent = sentences;
+
+    // Update accuracy rate (just a placeholder since we don't have real data)
+    const correctionCount = document.getElementById("correctionCount");
+    const accuracyRate = document.getElementById("accuracyRate");
+    
+    // Set some default values or calculate based on actual corrections
+    if (words > 0) {
+      const corrections = parseInt(correctionCount.textContent) || 0;
+      const accuracy = words > 0 ? Math.round(((words - corrections) / words) * 100) : 100;
+      accuracyRate.textContent = `${accuracy}%`;
+    }
+  }
 });
 
 // Listen for keyboard events globally to allow cycling through suggestions
@@ -42,9 +75,15 @@ document.addEventListener("keydown", function (e) {
       e.preventDefault();
       const activeSuggestion = suggestions[activeSuggestionIndex];
       if (activeSuggestion) {
-        const index = parseInt(activeSuggestion.getAttribute("data-index"));
-        acceptWordSuggestion(index);
-        // Reset the active suggestion index and update highlighting.
+        if (activeSuggestion.hasAttribute("data-correction")) {
+          // This means it's a sentence-level correction
+          const correctedSentence = activeSuggestion.getAttribute("data-correction");
+          acceptSentenceSuggestion(correctedSentence);
+        } else {
+          // This means it's a word-level correction
+          const index = parseInt(activeSuggestion.getAttribute("data-index"));
+          acceptWordSuggestion(index);
+        }
         activeSuggestionIndex = -1;
         updateActiveSuggestionHighlight(suggestions);
       }
@@ -83,6 +122,28 @@ async function getLiveSuggestion(text) {
 
     activeSuggestionIndex = -1;
 
+    // Update corrections count in the stats
+    const correctionCount = document.getElementById("correctionCount");
+    let corrections = 0;
+    
+    // Count differences between original and corrected words
+    for (let i = 0; i < Math.min(globalOrigWords.length, globalCorrWords.length); i++) {
+      if (globalOrigWords[i] !== globalCorrWords[i]) {
+        corrections++;
+      }
+    }
+    
+    // Add difference in length if sentences have different number of words
+    corrections += Math.abs(globalOrigWords.length - globalCorrWords.length);
+    
+    correctionCount.textContent = corrections;
+    
+    // Update accuracy rate
+    const totalWords = parseInt(document.getElementById("totalWordCount").textContent);
+    const accuracyRate = document.getElementById("accuracyRate");
+    const accuracy = totalWords > 0 ? Math.round(((totalWords - corrections) / totalWords) * 100) : 100;
+    accuracyRate.textContent = `${accuracy}%`;
+
     if (globalOrigWords.length === globalCorrWords.length) {
       renderWordDiff(globalOrigWords, globalCorrWords);
     } else {
@@ -90,12 +151,39 @@ async function getLiveSuggestion(text) {
     }
   } catch (error) {
     console.error("Error: " + error.message);
+    
+    // For demonstration/testing purposes only:
+    // Mock response if server is not available
+    mockLiveSuggestion(text);
+  }
+}
+
+// Mock function for demonstration when server is not available
+function mockLiveSuggestion(text) {
+  const originalLastSentence = extractLastSentence(text);
+  
+  // Simple mock corrections for demonstration
+  let correctedLastSentence = originalLastSentence;
+  
+  // Sample corrections
+  correctedLastSentence = correctedLastSentence.replace(" teh ", " the ");
+  correctedLastSentence = correctedLastSentence.replace(" thier ", " their ");
+  correctedLastSentence = correctedLastSentence.replace(" recieve ", " receive ");
+  
+  globalOrigWords = originalLastSentence.split(/\s+/).filter(w => w.length > 0);
+  globalCorrWords = correctedLastSentence.split(/\s+/).filter(w => w.length > 0);
+  
+  activeSuggestionIndex = -1;
+  
+  if (globalOrigWords.length === globalCorrWords.length) {
+    renderWordDiff(globalOrigWords, globalCorrWords);
+  } else {
+    renderSentenceDiff(originalLastSentence, correctedLastSentence);
   }
 }
 
 function extractLastSentence(text) {
   // Capture sentences ending with . or ? using regex
-  console.log("Entered extractLastSentence");
   const sentences = text.match(/[^.?!]+[.?!]+/g);
   if (sentences && sentences.length > 0) {
     return sentences[sentences.length - 1].trim();
@@ -134,7 +222,6 @@ function renderWordDiff(origWords, corrWords) {
     while (target && target !== container) {
       if (target.hasAttribute("data-index")) {
         const index = parseInt(target.getAttribute("data-index"));
-        console.log("Clicked on word index", index);
         acceptWordSuggestion(index);
         break;
       }
@@ -169,7 +256,6 @@ function clearRenderedText() {
 
 // Accept correction for a single word: update only that word in the textarea (typing bar)
 function acceptWordSuggestion(wordIndex) {
-  console.log("ENTERED acceptWordSuggestion");
   const sentenceInput = document.getElementById("sentenceInput");
   let text = sentenceInput.value;
  
@@ -187,6 +273,9 @@ function acceptWordSuggestion(wordIndex) {
     sentenceInput.value = newText;
     globalOrigWords[wordIndex] = globalCorrWords[wordIndex];
     renderWordDiff(globalOrigWords, globalCorrWords);
+    
+    // Show notification
+    showNotification("Correction applied!");
   }
 }
 
@@ -203,4 +292,37 @@ function acceptSentenceSuggestion(correctedSentence) {
   globalOrigWords = correctedSentence.split(/\s+/).filter(w => w.length > 0);
   globalCorrWords = [...globalOrigWords];
   renderWordDiff(globalOrigWords, globalCorrWords);
+  
+  // Show notification
+  showNotification("Full sentence correction applied!");
+}
+
+// Create and show a notification
+function showNotification(message) {
+  // Remove any existing notification
+  const existingNotification = document.querySelector('.notification');
+  if (existingNotification) {
+    document.body.removeChild(existingNotification);
+  }
+  
+  // Create new notification
+  const notification = document.createElement('div');
+  notification.className = 'notification';
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  // Trigger animation
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 10);
+  
+  // Auto-hide after 3 seconds
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => {
+      if (notification.parentNode) {
+        document.body.removeChild(notification);
+      }
+    }, 300); // Wait for transition to complete
+  }, 3000);
 }
