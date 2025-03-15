@@ -60,8 +60,8 @@ document.addEventListener("keydown", function (e) {
   const container = document.getElementById("renderedText");
   if (!container) return;
   const suggestions = container.querySelectorAll(".highlight");
-  if (suggestions.length === 0) return; 
-
+  if (suggestions.length === 0) return;
+  
   if (e.ctrlKey && e.key === "]") {
     e.preventDefault();
     activeSuggestionIndex = (activeSuggestionIndex + 1) % suggestions.length;
@@ -75,14 +75,15 @@ document.addEventListener("keydown", function (e) {
       e.preventDefault();
       const activeSuggestion = suggestions[activeSuggestionIndex];
       if (activeSuggestion) {
-        if (activeSuggestion.hasAttribute("data-correction")) {
-          // This means it's a sentence-level correction
-          const correctedSentence = activeSuggestion.getAttribute("data-correction");
-          acceptSentenceSuggestion(correctedSentence);
-        } else {
-          // This means it's a word-level correction
-          const index = parseInt(activeSuggestion.getAttribute("data-index"));
+        const dataIndex = activeSuggestion.getAttribute("data-index");
+        if (dataIndex !== null) {
+          const index = parseInt(dataIndex);
+          console.log("Keyboard: Accepting word suggestion at index", index);
           acceptWordSuggestion(index);
+        } else {
+          const corrected = activeSuggestion.getAttribute("data-correction");
+          console.log("Keyboard: Accepting sentence suggestion:", corrected);
+          acceptSentenceSuggestion(corrected);
         }
         activeSuggestionIndex = -1;
         updateActiveSuggestionHighlight(suggestions);
@@ -256,13 +257,12 @@ function clearRenderedText() {
 
 // Accept correction for a single word: update only that word in the textarea (typing bar)
 function acceptWordSuggestion(wordIndex) {
+  console.log("ENTERED acceptWordSuggestion");
   const sentenceInput = document.getElementById("sentenceInput");
   let text = sentenceInput.value;
- 
   const sentences = text.match(/[^.?!]+[.?!]+/g);
   if (!sentences || sentences.length === 0) return;
   
-  // Extract the last sentence where the corrections apply
   let lastSentence = sentences[sentences.length - 1].trim();
   let words = lastSentence.split(/\s+/);
   if (wordIndex < words.length) {
@@ -272,10 +272,8 @@ function acceptWordSuggestion(wordIndex) {
     const newText = sentences.join(" ");
     sentenceInput.value = newText;
     globalOrigWords[wordIndex] = globalCorrWords[wordIndex];
-    renderWordDiff(globalOrigWords, globalCorrWords);
-    
-    // Show notification
-    showNotification("Correction applied!");
+    // Re-run suggestion update to refresh diff
+    getLiveSuggestion(newText);
   }
 }
 
@@ -288,13 +286,8 @@ function acceptSentenceSuggestion(correctedSentence) {
   sentences[sentences.length - 1] = correctedSentence;
   const newText = sentences.join(" ");
   sentenceInput.value = newText;
-  // Update global arrays so diff now shows no mismatches
   globalOrigWords = correctedSentence.split(/\s+/).filter(w => w.length > 0);
   globalCorrWords = [...globalOrigWords];
-  renderWordDiff(globalOrigWords, globalCorrWords);
-  
-  // Show notification
-  showNotification("Full sentence correction applied!");
 }
 
 // Create and show a notification
